@@ -4,9 +4,12 @@ This file is the authoritative guidance for agents working in this repository.
 
 ## Project Structure
 
-- `apps/hello-world`: distributable hello-world application.
-- `libs/utils`: shared utility library starter.
+- `libs/utils`: shared utility library starter (not used by TDF).
 - `libs/tdf`: Test Data Factory package (CLI `tdf`), with unit and integration tests.
+- `Dockerfile`, `compose.yaml`: production `tdf` image and Compose stack (project `tdf`).
+- `scripts/verify.sh`: single verification entry point (`--integration` for Docker checks).
+- `evidence/`: submission evidence pack (intent, design, agentic workflow, verify, operate, decisions).
+- `TUTORIAL.md`: SteelWheels walkthrough using the production image.
 - `requirements.txt`: pinned Python dependencies installed in the development image.
 - `.devcontainer`: application, Neo4j, Docker Compose, and VS Code devcontainer configuration.
 - `opencode.json`: project OpenCode configuration, including the Code Review Graph MCP server.
@@ -28,8 +31,8 @@ This file is the authoritative guidance for agents working in this repository.
 ## Common Commands
 
 ```bash
-python -m pip install ./apps/hello-world
-hello-world
+scripts/verify.sh                 # fast checks
+scripts/verify.sh --integration   # Docker build + SteelWheels workflow
 python -m pip install ./libs/utils
 python -m pip install -r requirements.txt && python -m pip install -e ./libs/tdf
 pytest libs/tdf/tests -m "not neo4j"

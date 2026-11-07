@@ -6,7 +6,12 @@ against declared **expectations**. Metadata (schema, profiles, contracts, polici
 Neo4j graph; the sample source is the SteelWheels database in DuckDB; everything is driven from
 one CLI, `tdf`.
 
-**Demo in one block** (inside the devcontainer, from the repository root):
+**Documentation:** [`TUTORIAL.md`](TUTORIAL.md) (full SteelWheels walkthrough with the production
+Docker image) · [`evidence/`](evidence/) (intent, design, agentic workflow, verification, operations,
+decisions) · `scripts/verify.sh` (verification entry point).
+
+**Demo in one block** (inside the devcontainer, from the repository root; for the production image
+use the [tutorial](TUTORIAL.md)):
 
 ```bash
 tdf metadata register --database steelwheels --erd docs/steelwheels_erd.mmd --source data/steelwheels.duckdb
@@ -35,7 +40,10 @@ Status: **Phase 1 (Foundational MVP)** of [`docs/PRD.md`](docs/PRD.md). See
 | `data/allCountriesCSV.csv.gz` | Postal-code reference (~1.4M rows) used by the `geo` generator |
 | `.devcontainer/` | App + Neo4j containers, Compose, devcontainer config |
 | `.instructions/`, `.plans/`, `.feedback/` | The prompts, plans and reviews used to build this with a coding agent |
-| `apps/hello-world`, `libs/utils` | Scaffold starters; not part of TDF |
+| `Dockerfile`, `compose.yaml` | Production `tdf` image and Compose stack (Neo4j + CLI), Compose project `tdf` |
+| `scripts/verify.sh` | Verification entry point (`--integration` adds Docker build and the SteelWheels workflow) |
+| `evidence/` | Engineering evidence pack |
+| `libs/utils` | Unused shared-library starter; not part of TDF |
 
 ## 2. Problem being solved
 
@@ -119,12 +127,24 @@ Phase 1 provisional decisions (AD-001…AD-009) are in [`docs/PRD.md`](docs/PRD.
 
 ## 5. Quick start
 
-For a production-style run of the `tdf` CLI with Neo4j, follow the step-by-step
-[SteelWheels tutorial](TUTORIAL.md) (`docker compose build tdf`, then `docker compose run --rm tdf --help`).
+**Production-style (Docker only).** Prerequisites: Docker with Compose v2, Git, free ports 17474 and
+17687 on `127.0.0.1`.
 
-The development container setup is described below.
+```bash
+cp .env.changeme .env                  # set a non-empty NEO4J_PASSWORD in .env (never commit it)
+docker compose build tdf
+docker compose up -d --wait neo4j
+docker compose run --rm tdf metadata register --database steelwheels --erd docs/steelwheels_erd.mmd --source data/steelwheels.duckdb
+docker compose run --rm tdf contract load config/steelwheels/contract.yaml
+# profile each table (offices employees customers products orders orderdetails), then:
+docker compose run --rm tdf generate --database steelwheels --seed 42 --out /out/steelwheels
+docker compose run --rm tdf validate --database steelwheels --data-dir /out/steelwheels
+```
 
-Prerequisites: Docker (Compose v2) and VS Code with the Dev Containers extension (or plain
+CSVs appear in `./out/steelwheels`. The [tutorial](TUTORIAL.md) has every step (including the profile
+commands), expected output and cleanup. `docker compose down -v` removes the Neo4j volume.
+
+**Development container.** Prerequisites: Docker (Compose v2) and VS Code with the Dev Containers extension (or plain
 Compose). The images are built for `linux/amd64`.
 
 ```bash
@@ -173,7 +193,11 @@ CSVs are the report.
 
 ## 7. Testing and verification
 
+Results and gaps are recorded in [`evidence/verify.md`](evidence/verify.md).
+
 ```bash
+scripts/verify.sh                      # fast checks: unit tests, CLI smoke, controlled-failure check
+scripts/verify.sh --integration        # + image build, SteelWheels workflow, corruption check, Neo4j tests
 pytest libs/tdf/tests -m "not neo4j"   # unit tests; no services needed
 pytest libs/tdf/tests                  # all tests; needs Neo4j and NEO4J_PASSWORD
 ```
@@ -192,31 +216,10 @@ validation catching corruption after a successful generation; CLI smoke tests.
 
 ## 8. Agent-assisted engineering workflow
 
-This repository was built with OpenCode in about three hours (commits `5d01b62`…`0ea92e5`), then
-reviewed. The actual sequence, recorded in `.instructions/` (human prompts), `.plans/` (agent
-plans and outcomes) and git history:
-
-1. **Scaffold and isolate** — devcontainer, non-root user, read-only host agent config, Neo4j with
-   ephemeral storage, `AGENTS.md` as the authoritative instructions (`CLAUDE.md` defers to it), a
-   repository SKILL. One agent change (switching the base image to Node) was caught in review and
-   reverted (`8933b21`).
-2. **Requirements first** — ontology (`docs/ONTOLOGY.md`), then the PRD with acceptance criteria
-   and open architectural decisions. `AGENTS.md` forbids resolving AD-xxx without approval; the
-   Phase 1 choices are recorded as *provisional*.
-3. **Tests before implementation** — a plan (`.plans/03_phase1_mvp.md`) agreeing the stack and
-   provisional decisions, then stubs plus failing tests tagged with requirement IDs (`5266813`).
-4. **Implementation to green** — `0ea92e5`, with the plan updated to record decisions, data
-   quality findings and open items.
-5. **Review with an approval gate** — `.feedback/04_phase1_mvp_implementation.md`: the agent
-   inspected and probed the code, reported findings with file/line evidence and a plan, and
-   **stopped until the human approved scope and decisions** before changing anything.
-   Confirmed defects got regression tests that fail on the previous code.
-
-Model selection and token use were not measured; no savings are claimed. Practices used to keep
-context small: Code Review Graph for targeted structural lookups, deterministic tests and
-throwaway probe scripts as evidence instead of agent judgement, and plans/instructions as files
-so each session starts from written state rather than conversation history. Every commit was
-reviewed and made by a human.
+Built with OpenCode and Code Review Graph, requirements first, with human review and approval gates.
+See [`evidence/agentic-workflow.md`](evidence/agentic-workflow.md); decisions are in
+[`evidence/decisions.md`](evidence/decisions.md). The prompts are in `.instructions/`, agent plans in
+`.plans/` and reviews in `.feedback/`.
 
 ## 9. Known limitations
 
@@ -247,8 +250,10 @@ reviewed and made by a human.
 - **Not implemented** (ontology may represent them, the code does not): `tdf report`, `tdf repair`,
   generation run/plan records, PERFORMANCE/EDGE generation, expectation inference from profiles,
   statistical synthesis, adaptive learning.
+- **Errors.** Known domain, configuration and Neo4j errors print one `Error:` line and exit 1;
+  unexpected exceptions still show a traceback. Stale files in `--out` from earlier runs are not removed.
 - **Containers.** Neo4j image tag is floating (`neo4j:5-enterprise`); ports are published on all
-  interfaces; the `production` image contains only hello-world, not `tdf`.
+  interfaces; the production image (root `Dockerfile`) is tested on amd64 only.
 
 ## 10. Future roadmap
 
@@ -259,8 +264,8 @@ quality (repair, learning from failures), **P5** extended test-data management.
 
 ## Appendix: development environment
 
-- The app image (`.devcontainer/Dockerfile.app`) has `runtime`, `development` and `production`
-  targets; development adds OpenCode `1.19.3` (keep aligned with the host), Code Review Graph
+- The app image (`.devcontainer/Dockerfile.app`) has `runtime` and `development` targets;
+  development adds OpenCode `1.19.3` (keep aligned with the host), Code Review Graph
   `2.3.9`, the DuckDB CLI and pinned Python dependencies from `requirements.txt`. Locale
   `en_AU.UTF-8`, timezone `Australia/Sydney`.
 - Rebuild the SteelWheels database after changing `data/*.csv`:
