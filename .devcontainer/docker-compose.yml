@@ -4,6 +4,7 @@ services:
     build:
       context: ..
       dockerfile: .devcontainer/Dockerfile.app
+      target: development
     user: developer
     command: sleep infinity
     volumes:

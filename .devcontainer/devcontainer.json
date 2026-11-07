@@ -6,6 +6,10 @@
   "overrideCommand": false,
   "shutdownAction": "stopCompose",
   "remoteUser": "developer",
+  "mounts": [
+    "source=${localEnv:USERPROFILE}/.config/opencode/opencode.json,target=/home/developer/.config/opencode/opencode.json,type=bind,readonly",
+    "source=${localEnv:USERPROFILE}/.local/share/opencode/auth.json,target=/home/developer/.local/share/opencode/auth.json,type=bind,readonly"
+  ],
   "customizations": {
     "vscode": {
       "extensions": [

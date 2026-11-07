@@ -32,3 +32,12 @@ The graph publishes Neo4j Browser on `http://localhost:7474` and Bolt on
 when the container is removed.
 
 The repository can also be opened directly in VS Code using its devcontainer configuration.
+The development image includes OpenCode `1.19.3`, matching the host installation, and mounts
+the host's `opencode.json` and `auth.json` read-only into the `developer` user's home directory.
+
+The app Dockerfile has separate targets for development tooling and a minimal production image:
+
+```bash
+docker build --target development -f .devcontainer/Dockerfile.app -t test-data-factory:dev .
+docker build --target production -f .devcontainer/Dockerfile.app -t test-data-factory:prod .
+```

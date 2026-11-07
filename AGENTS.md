@@ -15,6 +15,8 @@ This file is the authoritative guidance for agents working in this repository.
 - Prefer small, focused changes and add tests when behavior becomes non-trivial.
 - Never commit `.env` or embed credentials in source, Compose files, or images.
 - Use `.env.changeme` as the documented environment template.
+- Keep the OpenCode version in `.devcontainer/Dockerfile.app` aligned with the host installation.
+- Keep host OpenCode configuration and authentication mounts read-only and development-only.
 
 ## Common Commands
 
