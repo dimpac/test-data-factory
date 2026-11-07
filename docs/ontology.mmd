@@ -13,3 +13,9 @@ flowchart TD
     K -->|USES_METRIC| L(ProfileMetric)
     I -->|PROFILES| B
     K -->|ABOUT| C
+    M(GenerationPlan) -->|RESOLVES| E
+    M -->|INFORMED_BY| I
+    N(GenerationRun) -->|EXECUTES| M
+    N -->|HAS_RESULT| O(ValidationResult)
+    O -->|EVALUATES| F
+    F -->|DERIVED_FROM| K

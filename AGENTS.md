@@ -9,6 +9,7 @@ This file is the authoritative guidance for agents working in this repository.
 - `.devcontainer`: application, Neo4j, Docker Compose, and VS Code devcontainer configuration.
 - `opencode.json`: project OpenCode configuration, including the Code Review Graph MCP server.
 - `docs/ONTOLOGY.md`: reference for the Test Data Factory graph ontology (node labels and relationships); diagram source in `docs/ontology.mmd`.
+- `docs/PRD.md`: product requirements, acceptance criteria, roadmap, and open architectural decisions.
 
 ## Development Conventions
 
@@ -20,6 +21,7 @@ This file is the authoritative guidance for agents working in this repository.
 - Keep the OpenCode version in `.devcontainer/Dockerfile.app` aligned with the host installation.
 - Keep host OpenCode configuration and authentication mounts read-only and development-only.
 - Keep Code Review Graph data under the ignored `.code-review-graph` directory.
+- Do not resolve the open architectural decisions (AD-xxx) in `docs/PRD.md` without explicit approval.
 
 ## Common Commands
 

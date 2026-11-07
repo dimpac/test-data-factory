@@ -2,7 +2,7 @@
 
 The Test Data Factory is a contract-driven system for generating synthetic test data.
 
-The ontology represents database structures, generation contracts, policies, generators, data profiles and profiling observations.
+The ontology represents database structures, generation contracts, policies, generators, data profiles, profiling observations, generation plans, runs and validation results.
 
 The graph acts as the control plane for data generation. Actual generated records are stored outside the knowledge graph.
 
@@ -26,6 +26,12 @@ flowchart TD
     K -->|USES_METRIC| L(ProfileMetric)
     I -->|PROFILES| B
     K -->|ABOUT| C
+    M(GenerationPlan) -->|RESOLVES| E
+    M -->|INFORMED_BY| I
+    N(GenerationRun) -->|EXECUTES| M
+    N -->|HAS_RESULT| O(ValidationResult)
+    O -->|EVALUATES| F
+    F -->|DERIVED_FROM| K
 ```
 
 ## Conceptual Areas
@@ -33,8 +39,9 @@ flowchart TD
 - **Schema:** Database, Table, Column
 - **Generation:** GeneratorContract, GenerationPolicy, Expectation, ColumnGroup, Generator
 - **Profiling:** DataProfile, ProfileSegment, ProfileObservation, ProfileMetric
+- **Execution:** GenerationPlan, GenerationRun, ValidationResult
 
-Table and Column are the shared anchor points. Table links schema to generation (through contracts) and to profiling (through `PROFILES`). Column is referenced by generation (`INCLUDES`) and profiling (`ABOUT`).
+Table and Column are the shared anchor points. Table links schema to generation (through contracts) and to profiling (through `PROFILES`). Column is referenced by generation (`INCLUDES`) and profiling (`ABOUT`). Execution links the other areas: plans resolve policies and use profiles, runs execute plans, and validation results evaluate expectations.
 
 ## Node Labels
 
@@ -86,6 +93,18 @@ Represents a measured characteristic of a column within a particular profile seg
 
 Defines a reusable profiling measurement, such as null count, distinct non-null count, minimum, maximum, mean or observed value set.
 
+### GenerationPlan
+
+Represents the resolved set of execution instructions derived from contracts, policies, column groups, metadata and available profiling observations. Identifies the selected generators, dependencies, parameters and validation requirements.
+
+### GenerationRun
+
+Represents one execution of a generation plan, including its configuration, seed, outputs, validation results and execution metadata.
+
+### ValidationResult
+
+Represents the outcome of evaluating one expectation for a generation run, including relevant failures, evidence and diagnostics.
+
 ## Relationships
 
 ### Summary
@@ -106,6 +125,12 @@ Defines a reusable profiling measurement, such as null count, distinct non-null 
 | `HAS_OBSERVATION` | ProfileSegment | ProfileObservation | Associates a profile segment with its measured observations. |
 | `ABOUT` | ProfileObservation | Column | Identifies the column to which a profiling observation applies. |
 | `USES_METRIC` | ProfileObservation | ProfileMetric | Identifies the metric used to produce an observation. |
+| `RESOLVES` | GenerationPlan | GenerationPolicy | Identifies the policy resolved into a plan. |
+| `INFORMED_BY` | GenerationPlan | DataProfile | Identifies the profile whose observations informed a plan. |
+| `EXECUTES` | GenerationRun | GenerationPlan | Identifies the plan executed by a run. |
+| `HAS_RESULT` | GenerationRun | ValidationResult | Associates a run with its validation results. |
+| `EVALUATES` | ValidationResult | Expectation | Identifies the expectation evaluated by a validation result. |
+| `DERIVED_FROM` | Expectation | ProfileObservation | Identifies the profiling observation from which an inferred expectation was derived. |
 
 ### Details
 
@@ -193,6 +218,59 @@ Identifies the column to which a profiling observation applies.
 
 Identifies the metric used to produce an observation.
 
+#### RESOLVES
+
+`(:GenerationPlan)-[:RESOLVES]->(:GenerationPolicy)`
+
+Identifies the policy resolved into a plan.
+
+#### INFORMED_BY
+
+`(:GenerationPlan)-[:INFORMED_BY]->(:DataProfile)`
+
+Identifies the profile whose observations informed a plan.
+
+#### EXECUTES
+
+`(:GenerationRun)-[:EXECUTES]->(:GenerationPlan)`
+
+Identifies the plan executed by a run.
+
+#### HAS_RESULT
+
+`(:GenerationRun)-[:HAS_RESULT]->(:ValidationResult)`
+
+Associates a run with its validation results.
+
+#### EVALUATES
+
+`(:ValidationResult)-[:EVALUATES]->(:Expectation)`
+
+Identifies the expectation evaluated by a validation result.
+
+#### DERIVED_FROM
+
+`(:Expectation)-[:DERIVED_FROM]->(:ProfileObservation)`
+
+Identifies the profiling observation from which an inferred expectation was derived. Profiling observations are evidence, not approved requirements; derived expectations start as proposed.
+
+## Documented Properties
+
+Only the following properties are defined so far.
+
+### Expectation
+
+| Property | Values | Description |
+|----------|--------|-------------|
+| `source` | `INFERRED`, `DECLARED`, `IMPORTED` | How the expectation originated. |
+| `status` | `PROPOSED`, `APPROVED`, `REJECTED`, `RETIRED` | Lifecycle state. Inferred expectations must not automatically become approved. |
+
+### ValidationResult
+
+| Property | Values | Description |
+|----------|--------|-------------|
+| `outcome` | `SATISFIED`, `UNEXPECTED_VIOLATION`, `EXPECTED_VIOLATION`, `UNEVALUATED` | Result of evaluating the expectation. |
+
 ## Conventions
 
 - Node labels are PascalCase; relationship types are UPPER_SNAKE_CASE.
@@ -200,6 +278,5 @@ Identifies the metric used to produce an observation.
 
 ## Open Questions
 
-- **Expectation and profiling:** Expectation may be informed by profiling observations, but no relationship links Expectation to ProfileObservation or ProfileMetric. Decide whether to model this link.
-- **Properties:** node and relationship properties are not yet defined. This includes the cardinality and join columns on `RELATES_TO`.
+- **Properties:** node and relationship properties other than those under Documented Properties are not yet defined. This includes the cardinality and join columns on `RELATES_TO`. See the open architectural decisions in [`PRD.md`](PRD.md).
 - **Naming:** the contract node is `GeneratorContract`, but the policy node remains `GenerationPolicy`. Confirm whether the naming should be aligned.
