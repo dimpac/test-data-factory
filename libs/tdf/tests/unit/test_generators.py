@@ -130,3 +130,59 @@ def test_tuple_generator_is_deterministic():
     profile = _profile(Observation(metric="value_set", columns=["CITY", "STATE", "COUNTRY"], value=observed))
     run = lambda: _run("tuple", columns=("CITY", "STATE", "COUNTRY"), profile=profile, params={"source": "profile"}, seed=9)
     assert run() == run()
+
+
+@pytest.mark.req("AC-05")
+def test_unique_tuple_generation_never_repeats_an_observed_combination():
+    observed = [["NA", "US", "1"], ["EMEA", "UK", "2"], ["APAC", "AU", "3"]]
+    profile = _profile(Observation(metric="value_set", columns=["TERRITORY", "COUNTRY", "CODE"], value=observed))
+    rows = _run("tuple", count=3, columns=("TERRITORY", "COUNTRY", "CODE"), profile=profile,
+                params={"source": "profile", "unique": True})
+    assert sorted(tuple(r.values()) for r in rows) == sorted(tuple(v) for v in observed)
+
+
+@pytest.mark.req("AC-05")
+def test_unique_tuple_generation_rejects_more_rows_than_combinations():
+    observed = [["NA", "US", "1"]]
+    profile = _profile(Observation(metric="value_set", columns=["TERRITORY", "COUNTRY", "CODE"], value=observed))
+    with pytest.raises(ValueError, match="combinations"):
+        _run("tuple", count=2, columns=("TERRITORY", "COUNTRY", "CODE"), profile=profile,
+             params={"source": "profile", "unique": True})
+
+
+@pytest.mark.req("FR-GEN-01")
+def test_faker_generator_is_deterministic_and_uses_provider():
+    first = _run("faker", count=20, seed=5, params={"provider": "name"})
+    assert first == _run("faker", count=20, seed=5, params={"provider": "name"})
+    assert all(isinstance(r["C"], str) and " " in r["C"] for r in first)
+
+
+def test_faker_generator_requires_provider():
+    with pytest.raises(ValueError, match="provider"):
+        _run("faker", params={})
+
+
+GEO_HEADER = "COUNTRY,POSTAL_CODE,CITY,STATE,SHORT_STATE\n"
+
+
+@pytest.mark.req("FR-GEN-01")
+def test_geo_generator_keeps_city_state_postal_and_country_together(tmp_path):
+    db = tmp_path / "postal.csv"
+    db.write_text(GEO_HEADER + "US,94080,South San Francisco,California,CA\nFR,75017,Paris,Ile-de-France,IDF\n")
+    rows = _run("geo", count=200, columns=("CITY", "STATE", "POSTALCODE", "COUNTRY"),
+                params={"source": str(db), "countries": ["USA", "France"]})
+    allowed = {
+        ("South San Francisco", "CA", "94080", "USA"),
+        ("Paris", "IDF", "75017", "France"),
+    }
+    assert {(r["CITY"], r["STATE"], r["POSTALCODE"], r["COUNTRY"]) for r in rows} <= allowed
+    assert len({tuple(r.values()) for r in rows}) == 2
+
+
+@pytest.mark.req("FR-GEN-01")
+def test_geo_generator_is_deterministic(tmp_path):
+    db = tmp_path / "postal.csv"
+    db.write_text(GEO_HEADER + "US,94080,South San Francisco,California,CA\nUS,94002,Belmont,California,CA\n")
+    run = lambda: _run("geo", count=10, seed=3, columns=("CITY", "STATE", "POSTALCODE", "COUNTRY"),
+                       params={"source": str(db), "countries": ["USA"]})
+    assert run() == run()

@@ -9,6 +9,7 @@ description = "Contract-driven synthetic test data generation for relational dat
 requires-python = ">=3.12"
 dependencies = [
     "click>=8.1",
+    "Faker>=40.44",
     "duckdb>=1.5",
     "neo4j>=6.0",
     "pandas>=3.0",

@@ -7,7 +7,10 @@ services:
       target: development
     user: developer
     command: sleep infinity
+    env_file:
+      - ../.env
     environment:
+      NEO4J_URL: bolt://test-data-factory-graph:7687
       GIT_CONFIG_COUNT: "2"
       GIT_CONFIG_KEY_0: safe.directory
       GIT_CONFIG_VALUE_0: /workspaces/test-data-factory
@@ -33,6 +36,7 @@ services:
       - -c
       - |
         export NEO4J_AUTH="$${NEO4J_USERNAME}/$${NEO4J_PASSWORD}"
+        export NEO4J_initial_dbms_default__database="$${NEO4J_DATABASE}"
         unset NEO4J_USERNAME NEO4J_PASSWORD NEO4J_DATABASE NEO4J_URL
         exec /startup/docker-entrypoint.sh neo4j
     tmpfs:

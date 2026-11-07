@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+# Register an ERD and its physical DuckDB source as metadata in Neo4j.
+#
+# Usage: tdf-metadata-register <database> <erd> <source>
+#   database  Logical database name stored in Neo4j (e.g. steelwheels)
+#   erd       Path to the Mermaid erDiagram file
+#   source    Path to the DuckDB database file
+
+set -euo pipefail
+
+usage() {
+    echo "Usage: $(basename "$0") <database> <erd> <source>" >&2
+}
+
+if [[ $# -ne 3 ]]; then
+    usage
+    exit 2
+fi
+
+database="$1"
+erd="$2"
+source_db="$3"
+
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+env_file="$script_dir/../.env"
+if [[ -z "${NEO4J_PASSWORD:-}" && -f "$env_file" ]]; then
+    set -a
+    # shellcheck disable=SC1090
+    source "$env_file"
+    set +a
+fi
+
+if [[ -z "${NEO4J_PASSWORD:-}" ]]; then
+    echo "error: NEO4J_PASSWORD is not set; export it or add it to $env_file" >&2
+    exit 1
+fi
+
+if [[ -z "$database" ]]; then
+    echo "error: database name must not be empty" >&2
+    exit 2
+fi
+
+if [[ ! -f "$erd" ]]; then
+    echo "error: ERD file not found: $erd" >&2
+    exit 1
+fi
+
+if [[ ! -f "$source_db" ]]; then
+    echo "error: DuckDB source not found: $source_db" >&2
+    exit 1
+fi
+
+tdf_bin="$(command -v tdf || true)"
+if [[ -z "$tdf_bin" && -x "$HOME/.local/bin/tdf" ]]; then
+    tdf_bin="$HOME/.local/bin/tdf"
+fi
+if [[ -z "$tdf_bin" ]]; then
+    echo "error: 'tdf' not found on PATH or in ~/.local/bin; install with: python -m pip install -e ./libs/tdf" >&2
+    exit 1
+fi
+
+exec "$tdf_bin" metadata register --database "$database" --erd "$erd" --source "$source_db"

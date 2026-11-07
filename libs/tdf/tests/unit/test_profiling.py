@@ -83,3 +83,15 @@ def test_steelwheels_status_is_bounded_and_skewed(steelwheels_connection):
     freq = _obs(result, "value_frequencies", "STATUS")
     assert len(freq) == 6
     assert freq["Shipped"] == 307
+
+
+def test_value_set_columns_opt_in_above_the_cap(small_connection):
+    result = profile_table(small_connection, "orders", value_set_columns=["STATUS"])
+    assert set(_obs(result, "value_set", "STATUS")) == {"Shipped", "Cancelled", "On Hold"}
+
+
+def test_value_set_opt_in_is_per_column(small_connection):
+    result = profile_table(small_connection, "customers", value_set_columns=["CUSTOMERNAME"])
+    names = [o.columns for o in result.observations if o.metric == "value_set"]
+    assert ["CUSTOMERNAME"] in names
+    assert ["CUSTOMERNUMBER"] not in names

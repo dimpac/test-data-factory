@@ -13,7 +13,7 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 STEELWHEELS_DB = REPO_ROOT / "data" / "steelwheels.duckdb"
 STEELWHEELS_ERD = REPO_ROOT / "docs" / "steelwheels_erd.mmd"
 STEELWHEELS_CONTRACT = Path(__file__).resolve().parents[1] / "config" / "steelwheels" / "contract.yaml"
-TEST_DATABASE = "tdf_test"
+TEST_DATABASE = "tdf-test"
 
 SMALL_ERD = """erDiagram
     customers ||--|{ orders : "CUSTOMERNUMBER=CUSTOMERNUMBER"

@@ -9,7 +9,7 @@ from click.testing import CliRunner
 
 from tdf.cli import main
 
-from ..conftest import STEELWHEELS_CONTRACT, STEELWHEELS_DB, STEELWHEELS_ERD
+from ..conftest import REPO_ROOT, STEELWHEELS_CONTRACT, STEELWHEELS_DB, STEELWHEELS_ERD
 
 pytestmark = [pytest.mark.neo4j, pytest.mark.duckdb]
 
@@ -18,7 +18,7 @@ TABLES = ["customers", "employees", "offices", "orderdetails", "orders", "produc
 
 @pytest.fixture
 def pipeline(graph, monkeypatch):
-    monkeypatch.setenv("NEO4J_DATABASE", "tdf_test")
+    monkeypatch.setenv("NEO4J_DATABASE", "tdf-test")
     runner = CliRunner()
 
     def run(*args):
@@ -27,9 +27,10 @@ def pipeline(graph, monkeypatch):
         return result
 
     run("metadata", "register", "--database", "steelwheels", "--erd", STEELWHEELS_ERD, "--source", STEELWHEELS_DB)
+    # Contracts first: profiling emits the tuple sets the contracts declare.
+    run("contract", "load", STEELWHEELS_CONTRACT)
     for table in TABLES:
         run("profile", "--database", "steelwheels", "--source", STEELWHEELS_DB, "--table", table)
-    run("contract", "load", STEELWHEELS_CONTRACT)
     return run
 
 
@@ -96,18 +97,22 @@ def test_status_distribution_follows_the_profile(pipeline, tmp_path):
 
 
 @pytest.mark.req("AC-05")
-def test_customer_locations_are_observed_combinations(pipeline, tmp_path):
-    import duckdb
+def test_customer_locations_are_real_postal_records(pipeline, tmp_path):
+    import csv
+
+    from tdf.generators.registry import COUNTRY_CODES, _geo_pool
 
     pipeline("generate", "--database", "steelwheels", "--seed", 42, "--out", tmp_path)
-    con = duckdb.connect(str(STEELWHEELS_DB), read_only=True)
-    observed = set(con.execute("SELECT DISTINCT CITY, STATE, COUNTRY FROM customers").fetchall())
-    generated = set(
-        duckdb.connect()
-        .execute(f"SELECT DISTINCT CITY, STATE, COUNTRY FROM read_csv('{tmp_path / 'customers.csv'}', header=true)")
-        .fetchall()
-    )
-    assert generated and generated <= observed
+    postal = {
+        (city, state or None, code, country)
+        for city, state, code, country in _geo_pool(str(REPO_ROOT / "data" / "allCountriesCSV.csv"), list(COUNTRY_CODES))
+    }
+    with open(tmp_path / "customers.csv", newline="") as handle:
+        rows = list(csv.DictReader(handle))
+    locations = {(r["CITY"], r["STATE"] or None, r["POSTALCODE"], r["COUNTRY"]) for r in rows}
+    assert locations and locations <= postal
+    # Geo draws are not limited to the seven locations present in the source.
+    assert len(locations) > 7
 
 
 @pytest.mark.req("AC-09")

@@ -10,10 +10,13 @@ contracts:
         row_count: 7
         column_groups:
           - {name: key, columns: [OFFICECODE], generator: sequence, params: {start: 1}}
-          - {name: text, columns: [PHONE, ADDRESSLINE1, ADDRESSLINE2, POSTALCODE, TERRITORY], generator: string}
+          - {name: phone, columns: [PHONE], generator: faker, params: {provider: phone_number}}
+          - {name: address_line1, columns: [ADDRESSLINE1], generator: faker, params: {provider: street_address}}
+          - {name: address_line2, columns: [ADDRESSLINE2], generator: faker, params: {provider: secondary_address}}
           - name: location
-            columns: [CITY, STATE, COUNTRY]
-            generator: tuple
+            columns: [CITY, STATE, POSTALCODE, COUNTRY, TERRITORY]
+            generator: geo
+            params: {source: data/allCountriesCSV.csv, countries: [Australia, Austria, Belgium, Canada, Denmark, Finland, France, Germany, Ireland, Italy, Japan, Netherlands, New Zealand, Norway, Philippines, Poland, Portugal, Russia, Singapore, South Africa, Spain, Sweden, Switzerland, UK, USA]}
         expectations:
           - {id: offices_pk_unique, type: uniqueness, scope: COLUMN, target: {table: offices, columns: [OFFICECODE]}}
           - {id: offices_volume, type: volume, scope: TABLE, target: {table: offices}, params: {min: 7, max: 7}}
@@ -27,7 +30,11 @@ contracts:
         row_count: 23
         column_groups:
           - {name: key, columns: [EMPLOYEENUMBER], generator: sequence, params: {start: 1000}}
-          - {name: names, columns: [LASTNAME, FIRSTNAME, EXTENSION, EMAIL, JOBTITLE], generator: string}
+          - {name: last_name, columns: [LASTNAME], generator: faker, params: {provider: last_name}}
+          - {name: first_name, columns: [FIRSTNAME], generator: faker, params: {provider: first_name}}
+          - {name: extension, columns: [EXTENSION], generator: string}
+          - {name: email, columns: [EMAIL], generator: faker, params: {provider: email}}
+          - {name: job_title, columns: [JOBTITLE], generator: string}
           - {name: office, columns: [OFFICECODE], generator: foreign_key, params: {parent: offices, parent_columns: [OFFICECODE]}}
           - {name: manager, columns: [REPORTSTO], generator: foreign_key, params: {parent: employees, parent_columns: [EMPLOYEENUMBER], null_ratio: 0.0}}
         expectations:
@@ -44,15 +51,20 @@ contracts:
         row_count: 126
         column_groups:
           - {name: key, columns: [CUSTOMERNUMBER], generator: sequence, params: {start: 100}}
-          - {name: names, columns: [CUSTOMERNAME, CONTACTLASTNAME, CONTACTFIRSTNAME, PHONE, ADDRESSLINE1, ADDRESSLINE2, POSTALCODE], generator: string}
+          - {name: customer_name, columns: [CUSTOMERNAME], generator: faker, params: {provider: company}}
+          - {name: contact_last_name, columns: [CONTACTLASTNAME], generator: faker, params: {provider: last_name}}
+          - {name: contact_first_name, columns: [CONTACTFIRSTNAME], generator: faker, params: {provider: first_name}}
+          - {name: phone, columns: [PHONE], generator: faker, params: {provider: phone_number}}
+          - {name: address_line1, columns: [ADDRESSLINE1], generator: faker, params: {provider: street_address}}
+          - {name: address_line2, columns: [ADDRESSLINE2], generator: faker, params: {provider: secondary_address}}
           - name: location
-            columns: [CITY, STATE, COUNTRY]
-            generator: tuple
+            columns: [CITY, STATE, POSTALCODE, COUNTRY]
+            generator: geo
+            params: {source: data/allCountriesCSV.csv, countries: [Australia, Austria, Belgium, Canada, Denmark, Finland, France, Germany, Ireland, Italy, Japan, Netherlands, New Zealand, Norway, Philippines, Poland, Portugal, Russia, Singapore, South Africa, Spain, Sweden, Switzerland, UK, USA]}
           - {name: sales_rep, columns: [SALESREPEMPLOYEENUMBER], generator: foreign_key, params: {parent: employees, parent_columns: [EMPLOYEENUMBER], null_ratio: 0.17}}
           - {name: credit, columns: [CREDITLIMIT], generator: integer, params: {min: 0, max: 230000}}
         expectations:
           - {id: customers_pk_unique, type: uniqueness, scope: COLUMN, target: {table: customers, columns: [CUSTOMERNUMBER]}}
-          - {id: customers_location_valid, type: tuple_in_set, scope: COLUMN, target: {table: customers, columns: [CITY, STATE, COUNTRY]}, params: {source: profile}}
           - {id: customers_rep_fk, type: referential_integrity, scope: RELATIONSHIP, target: {table: customers, columns: [SALESREPEMPLOYEENUMBER]}, params: {parent: employees, parent_columns: [EMPLOYEENUMBER]}}
 
   - name: products_contract
