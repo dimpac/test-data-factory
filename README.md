@@ -252,8 +252,9 @@ See [`evidence/agentic-workflow.md`](evidence/agentic-workflow.md); decisions ar
   statistical synthesis, adaptive learning.
 - **Errors.** Known domain, configuration and Neo4j errors print one `Error:` line and exit 1;
   unexpected exceptions still show a traceback. Stale files in `--out` from earlier runs are not removed.
-- **Containers.** Neo4j image tag is floating (`neo4j:5-enterprise`); ports are published on all
-  interfaces; the production image (root `Dockerfile`) is tested on amd64 only.
+- **Containers.** In the devcontainer stack, the Neo4j image tag is floating (`neo4j:5-enterprise`)
+  and ports are published on all interfaces. The production `compose.yaml` pins `neo4j:5.26-enterprise`
+  and binds to `127.0.0.1`. The production image (root `Dockerfile`) is tested on amd64 only.
 
 ## 10. Future roadmap
 

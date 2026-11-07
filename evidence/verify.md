@@ -48,6 +48,11 @@ Both exit non-zero when a mandatory check fails.
 - Devcontainer: the `development` target of `.devcontainer/Dockerfile.app` builds, and in it the editable
   install of `tdf` works and `hello-world` is absent. The full `post-create.sh` (DuckDB rebuild, Code
   Review Graph) and VS Code "Reopen in Container" were **not** run.
+- `scripts/verify.sh --integration` does not build `data/steelwheels.duckdb` on the host. In a clean
+  checkout the 21 Neo4j-backed tests are then **skipped** (pytest reports "21 skipped") while the script
+  still exits 0. In a final-audit run from a fresh clone, the script passed with 21 skipped; after building
+  the database with `python .devcontainer/setup-steelwheels.py --data-dir data --database data/steelwheels.duckdb`
+  it passed with 21 passed. Check the skip count. The script does not yet fail on skips.
 - Stale files in an existing `--out` directory are not removed before generating.
 - Unexpected (non-domain) exceptions still show a traceback.
 - Tests were run on a Windows host and in Linux containers (Neo4j); no macOS or ARM run.
