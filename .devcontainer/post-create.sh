@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-hello-world
 # Editable install of the Test Data Factory CLI. pip installs console scripts for the
 # non-root user into ~/.local/bin, which the image adds to PATH.
 python -m pip install --user --no-warn-script-location --quiet -e ./libs/tdf

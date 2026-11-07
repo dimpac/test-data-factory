@@ -228,3 +228,6 @@ __marimo__/
 
 # Generated test data (README demo output)
 /out/
+
+# Generated TDF output
+out/

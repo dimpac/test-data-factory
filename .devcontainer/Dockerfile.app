@@ -1,15 +1,9 @@
 FROM python:3.14-slim AS runtime
 
-COPY apps/hello-world /tmp/hello-world
-
-RUN pip install --no-cache-dir /tmp/hello-world \
-    && rm -rf /tmp/hello-world \
-    && groupadd --gid 1000 developer \
+RUN groupadd --gid 1000 developer \
     && useradd --uid 1000 --gid developer --create-home --shell /bin/bash developer
 
 USER developer
-
-CMD ["hello-world"]
 
 FROM runtime AS development
 
@@ -53,5 +47,3 @@ RUN curl --fail --silent --show-error --location https://opencode.ai/install \
     | bash -s -- --version "${OPENCODE_VERSION}" --no-modify-path
 
 ENV PATH="/home/developer/.opencode/bin:/home/developer/.local/bin:${PATH}"
-
-FROM runtime AS production
