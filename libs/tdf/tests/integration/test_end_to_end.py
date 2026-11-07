@@ -107,7 +107,7 @@ def test_customer_locations_are_real_postal_records(pipeline, tmp_path):
         (city, state or None, code, country)
         for city, state, code, country in _geo_pool(str(REPO_ROOT / "data" / "allCountriesCSV.csv.gz"), list(COUNTRY_CODES))
     }
-    with open(tmp_path / "customers.csv", newline="") as handle:
+    with open(tmp_path / "customers.csv", newline="", encoding="utf-8") as handle:
         rows = list(csv.DictReader(handle))
     locations = {(r["CITY"], r["STATE"] or None, r["POSTALCODE"], r["COUNTRY"]) for r in rows}
     assert locations and locations <= postal
@@ -131,5 +131,5 @@ def test_validation_reports_corruption_even_though_generation_succeeded(pipeline
 @pytest.mark.req("FR-GEN-10")
 def test_row_counts_follow_the_contract(pipeline, tmp_path):
     pipeline("generate", "--database", "steelwheels", "--seed", 42, "--out", tmp_path)
-    assert sum(1 for _ in open(tmp_path / "orders.csv")) - 1 == 330
-    assert sum(1 for _ in open(tmp_path / "offices.csv")) - 1 == 7
+    assert sum(1 for _ in open(tmp_path / "orders.csv", encoding="utf-8")) - 1 == 330
+    assert sum(1 for _ in open(tmp_path / "offices.csv", encoding="utf-8")) - 1 == 7

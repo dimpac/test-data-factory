@@ -33,7 +33,7 @@ def write_csv(
             return value.isoformat()
         return value
 
-    with path.open("w", newline="") as handle:
+    with path.open("w", newline="", encoding="utf-8") as handle:
         writer = csv.writer(handle)
         writer.writerow(columns)
         batch: list[list[Any]] = []

@@ -53,7 +53,7 @@ def validate_dataset(
             path = Path(data_dir) / f"{table}.csv"
             if not path.is_file():
                 raise _ConfigurationError(f"no data file {path.name}")
-            with path.open(newline="") as handle:
+            with path.open(newline="", encoding="utf-8") as handle:
                 reader = csv.DictReader(handle)
                 data = [
                     {key: (value if value != "" else None) for key, value in row.items()}

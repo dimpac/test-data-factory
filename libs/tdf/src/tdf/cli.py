@@ -6,6 +6,7 @@ from pathlib import Path
 
 import click
 import duckdb
+from neo4j.exceptions import AuthError, ServiceUnavailable
 
 from tdf.contracts import ContractFile, load_contract_file, validate_contract
 from tdf.engine import generate_dataset
@@ -16,7 +17,25 @@ from tdf.profiling import ProfileResult, profile_table
 from tdf.validation import Outcome, validate_dataset
 
 
-@click.group()
+class _TdfGroup(click.Group):
+    """Report known domain and environment errors as one-line diagnostics with exit code 1."""
+
+    def invoke(self, ctx: click.Context):
+        try:
+            return super().invoke(ctx)
+        except ValueError as exc:  # ContractError, GenerationError, ErdParseError, cycles, generator params, config
+            raise click.ClickException(str(exc)) from exc
+        except KeyError as exc:  # missing contract/profile/generator metadata
+            raise click.ClickException(str(exc.args[0]) if exc.args else "Missing metadata") from exc
+        except AuthError as exc:
+            raise click.ClickException("Neo4j authentication failed; check NEO4J_USERNAME and NEO4J_PASSWORD") from exc
+        except ServiceUnavailable as exc:
+            raise click.ClickException(
+                "Neo4j is unavailable; check NEO4J_URL and that the database is running and healthy"
+            ) from exc
+
+
+@click.group(cls=_TdfGroup)
 def main() -> None:
     """Contract-driven synthetic test data generation."""
 
@@ -45,6 +64,16 @@ def metadata_register(database: str, erd: Path, source: Path) -> None:
     click.echo(f"Registered {database}")
 
 
+def _registered_schema(repository: MetadataRepository, database: str):
+    """Return the stored schema, or fail: an unregistered database must never look like success."""
+    schema = repository.get_schema(database)
+    if not schema.tables:
+        raise click.ClickException(
+            f"Database {database!r} is not registered; run 'tdf metadata register' first"
+        )
+    return schema
+
+
 def _profile_options(repository: MetadataRepository, database: str, table: str) -> tuple[list[list[str]], list[str]]:
     """Tuple column lists and opted-in value-set columns declared by the table's stored contract."""
     try:
@@ -71,7 +100,7 @@ def profile(database: str, source: Path, table: str) -> None:
     graph = GraphClient.from_env()
     try:
         repository = MetadataRepository(graph)
-        schema = repository.get_schema(database)
+        schema = _registered_schema(repository, database)
         if table not in schema.tables:
             raise click.ClickException(f"Unknown table {table}")
         tuple_sets, value_set_columns = _profile_options(repository, database, table)
@@ -98,7 +127,7 @@ def contract_load(path: Path) -> None:
     graph = GraphClient.from_env()
     try:
         repository = MetadataRepository(graph)
-        schema = repository.get_schema(contract_file.database)
+        schema = _registered_schema(repository, contract_file.database)
         for contract in contract_file.contracts:
             validate_contract(contract, schema)
             repository.save_contract(contract_file.database, contract)
@@ -146,7 +175,7 @@ def generate(
         graph = GraphClient.from_env()
         try:
             repository = MetadataRepository(graph)
-            schema = repository.get_schema(database)
+            schema = _registered_schema(repository, database)
             contracts = [repository.load_contract(database, table) for table in schema.tables]
             contract_file = ContractFile(database=database, contracts=contracts)
             for table in schema.tables:
@@ -160,10 +189,13 @@ def generate(
         contract_file, schema, seed=seed, profiles=profiles,
         row_counts=_parse_row_counts(rows),
     )
-    out.mkdir(parents=True, exist_ok=True)
-    for table, table_rows in data.items():
-        columns = [column.name for column in schema.tables[table].columns]
-        write_csv(out / f"{table}.csv", columns, table_rows)
+    try:
+        out.mkdir(parents=True, exist_ok=True)
+        for table, table_rows in data.items():
+            columns = [column.name for column in schema.tables[table].columns]
+            write_csv(out / f"{table}.csv", columns, table_rows)
+    except OSError as exc:
+        raise click.ClickException(f"Cannot write output to {out}: {exc.strerror or exc}") from exc
     click.echo(f"Generated {sum(map(len, data.values()))} rows in {out}")
 
 
@@ -175,7 +207,7 @@ def validate_command(database: str, data_dir: Path) -> None:
     graph = GraphClient.from_env()
     try:
         repository = MetadataRepository(graph)
-        schema = repository.get_schema(database)
+        schema = _registered_schema(repository, database)
         expectations = []
         for table in schema.tables:
             contract = repository.load_contract(database, table)
@@ -202,6 +234,8 @@ def validate_command(database: str, data_dir: Path) -> None:
                     expectations.append(expectation)
     finally:
         graph.close()
+    if not expectations:
+        raise click.ClickException(f"No FUNCTIONAL expectations found for {database!r}; run 'tdf contract load'")
     results = validate_dataset(data_dir, schema, expectations)
     for result in results:
         suffix = f" {result.evidence}" if result.evidence else ""

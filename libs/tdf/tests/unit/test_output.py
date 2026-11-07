@@ -13,7 +13,7 @@ ROWS = [{"A": i, "B": f"v{i}"} for i in range(25)]
 def test_header_and_column_order(tmp_path):
     path = tmp_path / "t.csv"
     assert write_csv(path, ["B", "A"], iter(ROWS)) == 25
-    with open(path, newline="") as handle:
+    with open(path, newline="", encoding="utf-8") as handle:
         rows = list(csv.reader(handle))
     assert rows[0] == ["B", "A"]
     assert rows[1] == ["v0", "0"]
@@ -42,6 +42,12 @@ def test_accepts_a_one_shot_iterator(tmp_path):
 def test_nulls_and_temporal_values(tmp_path):
     path = tmp_path / "t.csv"
     write_csv(path, ["D", "T", "N"], [{"D": date(2020, 1, 2), "T": datetime(2020, 1, 2, 3, 4, 5), "N": None}])
-    with open(path, newline="") as handle:
+    with open(path, newline="", encoding="utf-8") as handle:
         _, row = list(csv.reader(handle))
     assert row == ["2020-01-02", "2020-01-02T03:04:05", ""]
+
+
+def test_non_ascii_values_are_written_as_utf8(tmp_path):
+    path = tmp_path / "t.csv"
+    write_csv(path, ["A"], iter([{"A": "Bac\u0103u"}]))
+    assert path.read_bytes().decode("utf-8").splitlines()[1] == "Bac\u0103u"

@@ -11,7 +11,7 @@ pytestmark = pytest.mark.req("FR-VAL-01", "FR-VAL-02", "FR-VAL-04", "AC-09")
 
 
 def _write(directory: Path, name: str, columns, rows):
-    with open(directory / f"{name}.csv", "w", newline="") as handle:
+    with open(directory / f"{name}.csv", "w", newline="", encoding="utf-8") as handle:
         writer = csv.writer(handle)
         writer.writerow(columns)
         writer.writerows(rows)

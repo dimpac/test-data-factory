@@ -8,6 +8,10 @@ from typing import Any
 from neo4j import GraphDatabase
 
 
+class ConfigurationError(ValueError):
+    """Raised when required environment configuration is missing."""
+
+
 class GraphClient:
     """Thin wrapper over the Neo4j driver bound to one database."""
 
@@ -22,7 +26,7 @@ class GraphClient:
         username = os.environ.get("NEO4J_USERNAME", "neo4j")
         password = os.environ.get("NEO4J_PASSWORD")
         if not password:
-            raise ValueError("NEO4J_PASSWORD is required")
+            raise ConfigurationError("NEO4J_PASSWORD is required; set it in .env or the environment")
         selected_database = database or os.environ.get("NEO4J_DATABASE", "neo4j")
         return cls(GraphDatabase.driver(url, auth=(username, password)), selected_database)
 
