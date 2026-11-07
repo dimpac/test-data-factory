@@ -8,6 +8,7 @@ This file is the authoritative guidance for agents working in this repository.
 - `libs/utils`: shared utility library starter.
 - `.devcontainer`: application, Neo4j, Docker Compose, and VS Code devcontainer configuration.
 - `opencode.json`: project OpenCode configuration, including the Code Review Graph MCP server.
+- `docs/ONTOLOGY.md`: reference for the Test Data Factory graph ontology (node labels and relationships); diagram source in `docs/ontology.mmd`.
 
 ## Development Conventions
 

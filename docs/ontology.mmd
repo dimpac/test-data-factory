@@ -1,0 +1,15 @@
+flowchart TD
+    A(Database) -->|HAS_TABLE| B(Table)
+    B -->|RELATES_TO| B
+    B -->|HAS_COLUMN| C(Column)
+    B -->|HAS_GENERATOR_CONTRACT| D(GeneratorContract)
+    D -->|HAS_POLICY| E(GenerationPolicy)
+    E -->|ENFORCES| F(Expectation)
+    E -->|HAS_COLUMN_GROUP| G(ColumnGroup)
+    G -->|USES_GENERATOR| H(Generator)
+    G -->|INCLUDES| C
+    I(DataProfile) -->|HAS_SEGMENT| J(ProfileSegment)
+    J -->|HAS_OBSERVATION| K(ProfileObservation)
+    K -->|USES_METRIC| L(ProfileMetric)
+    I -->|PROFILES| B
+    K -->|ABOUT| C
