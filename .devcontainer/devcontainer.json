@@ -1,0 +1,19 @@
+{
+  "name": "Test Data Factory",
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "test-data-factory-app",
+  "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+  "overrideCommand": false,
+  "shutdownAction": "stopCompose",
+  "remoteUser": "developer",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.debugpy",
+        "bierner.markdown-mermaid"
+      ]
+    }
+  },
+  "postCreateCommand": ".devcontainer/post-create.sh"
+}

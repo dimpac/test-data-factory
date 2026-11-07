@@ -1,0 +1,32 @@
+services:
+  test-data-factory-app:
+    platform: linux/amd64
+    build:
+      context: ..
+      dockerfile: .devcontainer/Dockerfile.app
+    user: developer
+    command: sleep infinity
+    volumes:
+      - ..:/workspaces/test-data-factory:cached
+    working_dir: /workspaces/test-data-factory
+
+  test-data-factory-graph:
+    build:
+      context: ..
+      dockerfile: .devcontainer/Dockerfile.graph
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    env_file:
+      - ../.env
+    environment:
+      NEO4J_ACCEPT_LICENSE_AGREEMENT: "yes"
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        export NEO4J_AUTH="$${NEO4J_USERNAME}/$${NEO4J_PASSWORD}"
+        unset NEO4J_USERNAME NEO4J_PASSWORD NEO4J_DATABASE NEO4J_URL
+        exec /startup/docker-entrypoint.sh neo4j
+    tmpfs:
+      - /data

@@ -1,0 +1,15 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hello-world"
+version = "0.1.0"
+description = "Container-ready hello-world application for Test Data Factory."
+requires-python = ">=3.12"
+
+[project.scripts]
+hello-world = "hello_world.__main__:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
