@@ -7,6 +7,12 @@ services:
       target: development
     user: developer
     command: sleep infinity
+    environment:
+      GIT_CONFIG_COUNT: "2"
+      GIT_CONFIG_KEY_0: safe.directory
+      GIT_CONFIG_VALUE_0: /workspaces/test-data-factory
+      GIT_CONFIG_KEY_1: core.autocrlf
+      GIT_CONFIG_VALUE_1: input
     volumes:
       - ..:/workspaces/test-data-factory:cached
     working_dir: /workspaces/test-data-factory

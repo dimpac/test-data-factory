@@ -218,3 +218,10 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Code Review Graph
+.code-review-graph/
+
+# Generated databases
+/data/steelwheels.duckdb*
+/data/.steelwheels.duckdb.tmp*

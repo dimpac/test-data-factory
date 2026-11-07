@@ -1,0 +1,16 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "code-review-graph": {
+      "type": "local",
+      "command": [
+        "code-review-graph",
+        "serve",
+        "--repo",
+        "/workspaces/test-data-factory",
+        "--auto-watch"
+      ],
+      "enabled": true
+    }
+  }
+}

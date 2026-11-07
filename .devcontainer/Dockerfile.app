@@ -15,17 +15,34 @@ FROM runtime AS development
 
 ARG OPENCODE_VERSION=1.19.3
 ARG CODE_REVIEW_GRAPH_VERSION=2.3.9
+ARG DUCKDB_VERSION=1.5.6
 
 USER root
 
 RUN apt-get update \
-    && apt-get install --yes --no-install-recommends ca-certificates curl git \
+    && DEBIAN_FRONTEND=noninteractive apt-get install --yes --no-install-recommends \
+        ca-certificates curl git locales tzdata \
+    && localedef --inputfile=en_AU --charmap=UTF-8 en_AU.UTF-8 \
+    && ln --symbolic --force /usr/share/zoneinfo/Australia/Sydney /etc/localtime \
+    && printf '%s\n' 'Australia/Sydney' > /etc/timezone \
     && pip install --no-cache-dir \
         "code-review-graph==${CODE_REVIEW_GRAPH_VERSION}" \
-        "duckdb==1.5.6" \
+        "duckdb==${DUCKDB_VERSION}" \
+    && curl --fail --silent --show-error --location \
+        "https://github.com/duckdb/duckdb/releases/download/v${DUCKDB_VERSION}/duckdb_cli-linux-amd64.zip" \
+        --output /tmp/duckdb-cli.zip \
+    && python -m zipfile --extract /tmp/duckdb-cli.zip /tmp/duckdb-cli \
+    && install --mode=0755 /tmp/duckdb-cli/duckdb /usr/local/bin/duckdb \
+    && duckdb --version >/dev/null \
+    && rm -rf /tmp/duckdb-cli /tmp/duckdb-cli.zip \
     && rm -rf /var/lib/apt/lists/* \
     && mkdir -p /home/developer/.config/opencode /home/developer/.local/share/opencode \
     && chown -R developer:developer /home/developer/.config /home/developer/.local
+
+ENV LANG=en_AU.UTF-8 \
+    LANGUAGE=en_AU:en \
+    LC_ALL=en_AU.UTF-8 \
+    TZ=Australia/Sydney
 
 USER developer
 

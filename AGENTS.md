@@ -7,6 +7,7 @@ This file is the authoritative guidance for agents working in this repository.
 - `apps/hello-world`: distributable hello-world application.
 - `libs/utils`: shared utility library starter.
 - `.devcontainer`: application, Neo4j, Docker Compose, and VS Code devcontainer configuration.
+- `opencode.json`: project OpenCode configuration, including the Code Review Graph MCP server.
 
 ## Development Conventions
 
@@ -17,6 +18,7 @@ This file is the authoritative guidance for agents working in this repository.
 - Use `.env.changeme` as the documented environment template.
 - Keep the OpenCode version in `.devcontainer/Dockerfile.app` aligned with the host installation.
 - Keep host OpenCode configuration and authentication mounts read-only and development-only.
+- Keep Code Review Graph data under the ignored `.code-review-graph` directory.
 
 ## Common Commands
 

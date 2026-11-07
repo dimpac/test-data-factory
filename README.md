@@ -34,10 +34,45 @@ when the container is removed.
 The repository can also be opened directly in VS Code using its devcontainer configuration.
 The development image includes OpenCode `1.19.3`, matching the host installation, and mounts
 the host's `opencode.json` and `auth.json` read-only into the `developer` user's home directory.
+It uses the `en_AU.UTF-8` locale and `Australia/Sydney` timezone, including daylight-saving
+offsets in Git commit timestamps.
+
+## SteelWheels Database
+
+When the devcontainer is created, each CSV file directly under `data/` is imported into
+`data/steelwheels.duckdb`. Table names are derived from CSV filename stems, and DuckDB infers
+column names and types from each file. The generated database is ignored by Git.
+
+Rebuild the database after changing the CSV files:
+
+```bash
+python .devcontainer/setup-steelwheels.py
+```
+
+Connect to it with the DuckDB CLI included in the development image:
+
+```bash
+duckdb data/steelwheels.duckdb
+```
 
 The app Dockerfile has separate targets for development tooling and a minimal production image:
 
 ```bash
 docker build --target development -f .devcontainer/Dockerfile.app -t test-data-factory:dev .
 docker build --target production -f .devcontainer/Dockerfile.app -t test-data-factory:prod .
+```
+
+## Code Review Graph
+
+The development image includes Code Review Graph `2.3.9`. The devcontainer initializes the graph
+when it is created, and the project `opencode.json` configures OpenCode to launch the MCP server
+locally over stdio inside the app container. The server watches the workspace and incrementally
+updates the graph while OpenCode is running. No separate CRG Compose service or network port is
+required.
+
+Check the integration from the app container with:
+
+```bash
+opencode mcp list
+code-review-graph status
 ```

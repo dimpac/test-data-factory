@@ -1,6 +1,9 @@
 .git
 .env
 .venv
+.code-review-graph
+data/steelwheels.duckdb*
+data/.steelwheels.duckdb.tmp*
 **/__pycache__
 **/*.py[cod]
 **/.pytest_cache
