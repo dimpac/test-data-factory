@@ -186,3 +186,29 @@ def test_geo_generator_is_deterministic(tmp_path):
     run = lambda: _run("geo", count=10, seed=3, columns=("CITY", "STATE", "POSTALCODE", "COUNTRY"),
                        params={"source": str(db), "countries": ["USA"]})
     assert run() == run()
+
+
+@pytest.mark.req("FR-GEN-01")
+def test_geo_generator_reads_gzip_source(tmp_path):
+    import gzip
+
+    db = tmp_path / "postal.csv.gz"
+    with gzip.open(db, "wt", encoding="utf-8") as handle:
+        handle.write(GEO_HEADER + "US,94080,South San Francisco,California,CA\n")
+    rows = _run("geo", count=3, columns=("CITY", "STATE", "POSTALCODE", "COUNTRY"),
+                params={"source": str(db), "countries": ["USA"]})
+    assert {r["CITY"] for r in rows} == {"South San Francisco"}
+
+
+def test_geo_generator_resolves_repository_relative_source(tmp_path, monkeypatch):
+    from tdf.generators.registry import _resolve_source
+
+    monkeypatch.chdir(tmp_path)
+    assert _resolve_source("data/allCountriesCSV.csv.gz").is_file()
+
+
+def test_geo_generator_reports_missing_source(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    with pytest.raises(FileNotFoundError, match="geo source"):
+        _run("geo", count=1, columns=("CITY", "STATE", "POSTALCODE", "COUNTRY"),
+             params={"source": "no/such/file.csv", "countries": ["USA"]})

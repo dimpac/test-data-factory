@@ -105,7 +105,7 @@ def test_customer_locations_are_real_postal_records(pipeline, tmp_path):
     pipeline("generate", "--database", "steelwheels", "--seed", 42, "--out", tmp_path)
     postal = {
         (city, state or None, code, country)
-        for city, state, code, country in _geo_pool(str(REPO_ROOT / "data" / "allCountriesCSV.csv"), list(COUNTRY_CODES))
+        for city, state, code, country in _geo_pool(str(REPO_ROOT / "data" / "allCountriesCSV.csv.gz"), list(COUNTRY_CODES))
     }
     with open(tmp_path / "customers.csv", newline="") as handle:
         rows = list(csv.DictReader(handle))

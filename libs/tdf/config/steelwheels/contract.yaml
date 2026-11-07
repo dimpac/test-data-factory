@@ -16,7 +16,7 @@ contracts:
           - name: location
             columns: [CITY, STATE, POSTALCODE, COUNTRY, TERRITORY]
             generator: geo
-            params: {source: data/allCountriesCSV.csv, countries: [Australia, Austria, Belgium, Canada, Denmark, Finland, France, Germany, Ireland, Italy, Japan, Netherlands, New Zealand, Norway, Philippines, Poland, Portugal, Russia, Singapore, South Africa, Spain, Sweden, Switzerland, UK, USA]}
+            params: {source: data/allCountriesCSV.csv.gz, countries: [Australia, Austria, Belgium, Canada, Denmark, Finland, France, Germany, Ireland, Italy, Japan, Netherlands, New Zealand, Norway, Philippines, Poland, Portugal, Russia, Singapore, South Africa, Spain, Sweden, Switzerland, UK, USA]}
         expectations:
           - {id: offices_pk_unique, type: uniqueness, scope: COLUMN, target: {table: offices, columns: [OFFICECODE]}}
           - {id: offices_volume, type: volume, scope: TABLE, target: {table: offices}, params: {min: 7, max: 7}}
@@ -60,7 +60,7 @@ contracts:
           - name: location
             columns: [CITY, STATE, POSTALCODE, COUNTRY]
             generator: geo
-            params: {source: data/allCountriesCSV.csv, countries: [Australia, Austria, Belgium, Canada, Denmark, Finland, France, Germany, Ireland, Italy, Japan, Netherlands, New Zealand, Norway, Philippines, Poland, Portugal, Russia, Singapore, South Africa, Spain, Sweden, Switzerland, UK, USA]}
+            params: {source: data/allCountriesCSV.csv.gz, countries: [Australia, Austria, Belgium, Canada, Denmark, Finland, France, Germany, Ireland, Italy, Japan, Netherlands, New Zealand, Norway, Philippines, Poland, Portugal, Russia, Singapore, South Africa, Spain, Sweden, Switzerland, UK, USA]}
           - {name: sales_rep, columns: [SALESREPEMPLOYEENUMBER], generator: foreign_key, params: {parent: employees, parent_columns: [EMPLOYEENUMBER], null_ratio: 0.17}}
           - {name: credit, columns: [CREDITLIMIT], generator: integer, params: {min: 0, max: 230000}}
         expectations:

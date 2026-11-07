@@ -10,6 +10,7 @@ import datetime as dt
 import functools
 import random
 import string
+from pathlib import Path
 from typing import Any
 
 from tdf.generators.base import Generator
@@ -32,7 +33,7 @@ def _faker_value(provider: str, seed: int, *, locale: str | None) -> Any:
     return method()
 
 
-# SteelWheels country names mapped to ISO alpha2 codes used by allCountriesCSV.csv.
+# SteelWheels country names mapped to ISO alpha2 codes used by allCountriesCSV.csv.gz.
 COUNTRY_CODES = {
     "Australia": "AU", "Austria": "AT", "Belgium": "BE", "Canada": "CA", "Denmark": "DK",
     "Finland": "FI", "France": "FR", "Germany": "DE", "Ireland": "IE", "Italy": "IT",
@@ -57,22 +58,42 @@ TERRITORY_BY_COUNTRY = {
 }
 
 
+def _resolve_source(source: str) -> Path:
+    """Resolve a data path as given, else relative to the working directory, else the repo root.
+
+    Contracts name repository-relative paths such as ``data/allCountriesCSV.csv.gz``; resolving
+    them against the repository root lets ``tdf`` run from any directory.
+    """
+    path = Path(source)
+    if path.is_absolute() or path.exists():
+        return path
+    for parent in Path(__file__).resolve().parents:
+        candidate = parent / source
+        if candidate.exists():
+            return candidate
+    raise FileNotFoundError(f"geo source {source!r} not found (relative paths resolve against the "
+                            f"working directory and the repository root)")
+
+
 def _geo_pool(source: str, countries: list[str]) -> list[tuple[str, str, str, str]]:
     """(city, state, postal code, SteelWheels country) rows for the requested countries.
 
-    `source` is a CSV with COUNTRY (alpha2), POSTAL_CODE, CITY and SHORT_STATE columns.
+    `source` is a CSV, optionally gzip-compressed (``.gz``), with COUNTRY (alpha2), POSTAL_CODE,
+    CITY and SHORT_STATE columns.
     """
-    return list(_cached_geo_pool(str(source), tuple(countries)))
+    return list(_cached_geo_pool(str(_resolve_source(str(source))), tuple(countries)))
 
 
 @functools.lru_cache(maxsize=8)
 def _cached_geo_pool(source: str, countries: tuple[str, ...]) -> tuple[tuple[str, str, str, str], ...]:
     # The postal file has about 1.4M rows; read it once per (file, country set), not per call.
     import csv
+    import gzip
 
     wanted = {COUNTRY_CODES[name]: name for name in countries}
     pool: list[tuple[str, str, str, str]] = []
-    with open(source, newline="", encoding="utf-8") as handle:
+    opener = gzip.open if source.endswith(".gz") else open
+    with opener(source, "rt", newline="", encoding="utf-8") as handle:
         for row in csv.DictReader(handle):
             steelwheels_country = wanted.get(row["COUNTRY"])
             if steelwheels_country is None or not row["CITY"]:
