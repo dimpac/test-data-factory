@@ -153,3 +153,59 @@ def test_one_result_per_expectation(dataset, small_erd):
         [_exp("a", "uniqueness", "orders", ["ORDERNUMBER"]), _exp("b", "volume", "orders", [], "TABLE", min=0, max=9)],
     )
     assert [r.expectation_id for r in results] == ["a", "b"]
+
+
+# --- Misconfigured expectations never pass silently (review P0.3) -------------------------------
+
+@pytest.mark.parametrize("type_, params", [
+    ("completeness", {}),
+    ("uniqueness", {}),
+    ("enumeration", {"values": ["Shipped"]}),
+    ("range", {"min": 0}),
+    ("tuple_in_set", {"values": [["Shipped"]]}),
+])
+def test_unknown_column_is_a_configuration_error(dataset, small_erd, type_, params):
+    result = _run(dataset, small_erd, _exp("x", type_, "orders", ["NOPE"], **params))["x"]
+    assert result.outcome is Outcome.UNEXPECTED_VIOLATION
+    assert "configuration error" in result.evidence and "NOPE" in result.evidence
+
+
+def test_missing_data_file_is_a_configuration_error(dataset, small_erd):
+    result = _run(dataset, small_erd, _exp("x", "volume", "missing", [], scope="TABLE", min=1))["x"]
+    assert result.outcome is Outcome.UNEXPECTED_VIOLATION
+    assert "no data file missing.csv" in result.evidence
+
+
+def test_referential_integrity_without_parent_is_a_configuration_error(dataset, small_erd):
+    result = _run(dataset, small_erd, _exp("x", "referential_integrity", "orders", ["CUSTOMERNUMBER"],
+                                           scope="RELATIONSHIP"))["x"]
+    assert result.outcome is Outcome.UNEXPECTED_VIOLATION and "parent" in result.evidence
+
+
+def test_referential_integrity_with_unknown_parent_column_is_a_configuration_error(dataset, small_erd):
+    result = _run(dataset, small_erd, _exp("x", "referential_integrity", "orders", ["CUSTOMERNUMBER"],
+                                           scope="RELATIONSHIP", parent="customers",
+                                           parent_columns=["NOPE"]))["x"]
+    assert result.outcome is Outcome.UNEXPECTED_VIOLATION and "NOPE" in result.evidence
+
+
+def test_enumeration_without_values_is_a_configuration_error(dataset, small_erd):
+    result = _run(dataset, small_erd, _exp("x", "enumeration", "orders", ["STATUS"], source="profile"))["x"]
+    assert result.outcome is Outcome.UNEXPECTED_VIOLATION and "values" in result.evidence
+
+
+def test_non_numeric_value_violates_numeric_range(dataset, small_erd):
+    result = _run(dataset, small_erd, _exp("x", "range", "orders", ["STATUS"], min=0))["x"]
+    assert result.outcome is Outcome.UNEXPECTED_VIOLATION and "Shipped" in result.evidence
+
+
+def test_unapproved_expectations_are_not_evaluated(dataset, small_erd):
+    rejected = ExpectationSpec(id="x", type="volume", scope="TABLE", target=Target(table="orders"),
+                               params={"min": 100}, status="REJECTED")
+    result = _run(dataset, small_erd, rejected)["x"]
+    assert result.outcome is Outcome.UNEVALUATED and "REJECTED" in result.evidence
+
+
+def test_unsupported_type_explains_why_it_is_unevaluated(dataset, small_erd):
+    result = _run(dataset, small_erd, _exp("x", "regex", "orders", ["STATUS"]))["x"]
+    assert result.outcome is Outcome.UNEVALUATED and "unsupported" in result.evidence
