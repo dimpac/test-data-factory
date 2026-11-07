@@ -10,3 +10,6 @@ data/.steelwheels.duckdb.tmp*
 **/.ruff_cache
 **/build
 **/dist
+.feedback
+.instructions
+out

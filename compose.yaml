@@ -1,0 +1,60 @@
+# Production-style runtime for the Test Data Factory CLI and Neo4j.
+# Separate from .devcontainer/docker-compose.yml; use the project name "tdf" to keep them apart.
+#
+#   docker compose build tdf
+#   docker compose up -d neo4j
+#   docker compose run --rm tdf --help
+#
+# Credentials are read from .env (copy .env.changeme and set NEO4J_PASSWORD). Nothing is baked into images.
+
+name: tdf
+
+services:
+  neo4j:
+    image: neo4j:5.26-enterprise
+    env_file:
+      - .env
+    environment:
+      NEO4J_ACCEPT_LICENSE_AGREEMENT: "yes"
+    # Map the .env variables onto the official image's settings, then start the server.
+    # NEO4J_AUTH and the default database are only applied when the data volume is first initialised.
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        export NEO4J_AUTH="$${NEO4J_USERNAME}/$${NEO4J_PASSWORD}"
+        export NEO4J_initial_dbms_default__database="$${NEO4J_DATABASE}"
+        unset NEO4J_USERNAME NEO4J_PASSWORD NEO4J_DATABASE NEO4J_URL
+        exec /startup/docker-entrypoint.sh neo4j
+    ports:
+      - "127.0.0.1:${TDF_NEO4J_HTTP_PORT:-17474}:7474"
+      - "127.0.0.1:${TDF_NEO4J_BOLT_PORT:-17687}:7687"
+    healthcheck:
+      # The Bolt port accepting connections means the server is ready; uses only the image's bash.
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/7687' || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 20s
+    volumes:
+      - tdf-neo4j-data:/data
+    restart: unless-stopped
+
+  tdf:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: test-data-factory-tdf:local
+    profiles: ["cli"]
+    env_file:
+      - .env
+    environment:
+      NEO4J_URL: bolt://neo4j:7687
+    volumes:
+      - ./out:/out
+    depends_on:
+      neo4j:
+        condition: service_healthy
+
+volumes:
+  tdf-neo4j-data:

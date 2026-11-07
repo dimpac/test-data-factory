@@ -119,6 +119,11 @@ Phase 1 provisional decisions (AD-001…AD-009) are in [`docs/PRD.md`](docs/PRD.
 
 ## 5. Quick start
 
+For a production-style run of the `tdf` CLI with Neo4j, follow the step-by-step
+[SteelWheels tutorial](TUTORIAL.md) (`docker compose build tdf`, then `docker compose run --rm tdf --help`).
+
+The development container setup is described below.
+
 Prerequisites: Docker (Compose v2) and VS Code with the Dev Containers extension (or plain
 Compose). The images are built for `linux/amd64`.
 
