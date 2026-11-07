@@ -6,6 +6,8 @@ This file is the authoritative guidance for agents working in this repository.
 
 - `apps/hello-world`: distributable hello-world application.
 - `libs/utils`: shared utility library starter.
+- `libs/tdf`: Test Data Factory package (CLI `tdf`), with unit and integration tests.
+- `requirements.txt`: pinned Python dependencies installed in the development image.
 - `.devcontainer`: application, Neo4j, Docker Compose, and VS Code devcontainer configuration.
 - `opencode.json`: project OpenCode configuration, including the Code Review Graph MCP server.
 - `docs/ONTOLOGY.md`: reference for the Test Data Factory graph ontology (node labels and relationships); diagram source in `docs/ontology.mmd`.
@@ -29,6 +31,9 @@ This file is the authoritative guidance for agents working in this repository.
 python -m pip install ./apps/hello-world
 hello-world
 python -m pip install ./libs/utils
+python -m pip install -r requirements.txt && python -m pip install -e ./libs/tdf
+pytest libs/tdf/tests -m "not neo4j"
+pytest libs/tdf/tests
 docker compose -f .devcontainer/docker-compose.yml build
 docker compose -f .devcontainer/docker-compose.yml up
 ```

@@ -1,0 +1,114 @@
+# FUNCTIONAL generator contract for the SteelWheels sample database.
+database: steelwheels
+contracts:
+  - name: offices_contract
+    table: offices
+    version: 1
+    policies:
+      - name: offices_functional
+        intent: FUNCTIONAL
+        row_count: 7
+        column_groups:
+          - {name: key, columns: [OFFICECODE], generator: sequence, params: {start: 1}}
+          - {name: text, columns: [PHONE, ADDRESSLINE1, ADDRESSLINE2, POSTALCODE, TERRITORY], generator: string}
+          - name: location
+            columns: [CITY, STATE, COUNTRY]
+            generator: tuple
+        expectations:
+          - {id: offices_pk_unique, type: uniqueness, scope: COLUMN, target: {table: offices, columns: [OFFICECODE]}}
+          - {id: offices_volume, type: volume, scope: TABLE, target: {table: offices}, params: {min: 7, max: 7}}
+
+  - name: employees_contract
+    table: employees
+    version: 1
+    policies:
+      - name: employees_functional
+        intent: FUNCTIONAL
+        row_count: 23
+        column_groups:
+          - {name: key, columns: [EMPLOYEENUMBER], generator: sequence, params: {start: 1000}}
+          - {name: names, columns: [LASTNAME, FIRSTNAME, EXTENSION, EMAIL, JOBTITLE], generator: string}
+          - {name: office, columns: [OFFICECODE], generator: foreign_key, params: {parent: offices, parent_columns: [OFFICECODE]}}
+          - {name: manager, columns: [REPORTSTO], generator: foreign_key, params: {parent: employees, parent_columns: [EMPLOYEENUMBER], null_ratio: 0.0}}
+        expectations:
+          - {id: employees_pk_unique, type: uniqueness, scope: COLUMN, target: {table: employees, columns: [EMPLOYEENUMBER]}}
+          - {id: employees_office_fk, type: referential_integrity, scope: RELATIONSHIP, target: {table: employees, columns: [OFFICECODE]}, params: {parent: offices, parent_columns: [OFFICECODE]}}
+          - {id: employees_manager_fk, type: referential_integrity, scope: RELATIONSHIP, target: {table: employees, columns: [REPORTSTO]}, params: {parent: employees, parent_columns: [EMPLOYEENUMBER]}}
+
+  - name: customers_contract
+    table: customers
+    version: 1
+    policies:
+      - name: customers_functional
+        intent: FUNCTIONAL
+        row_count: 126
+        column_groups:
+          - {name: key, columns: [CUSTOMERNUMBER], generator: sequence, params: {start: 100}}
+          - {name: names, columns: [CUSTOMERNAME, CONTACTLASTNAME, CONTACTFIRSTNAME, PHONE, ADDRESSLINE1, ADDRESSLINE2, POSTALCODE], generator: string}
+          - name: location
+            columns: [CITY, STATE, COUNTRY]
+            generator: tuple
+          - {name: sales_rep, columns: [SALESREPEMPLOYEENUMBER], generator: foreign_key, params: {parent: employees, parent_columns: [EMPLOYEENUMBER], null_ratio: 0.17}}
+          - {name: credit, columns: [CREDITLIMIT], generator: integer, params: {min: 0, max: 230000}}
+        expectations:
+          - {id: customers_pk_unique, type: uniqueness, scope: COLUMN, target: {table: customers, columns: [CUSTOMERNUMBER]}}
+          - {id: customers_location_valid, type: tuple_in_set, scope: COLUMN, target: {table: customers, columns: [CITY, STATE, COUNTRY]}, params: {source: profile}}
+          - {id: customers_rep_fk, type: referential_integrity, scope: RELATIONSHIP, target: {table: customers, columns: [SALESREPEMPLOYEENUMBER]}, params: {parent: employees, parent_columns: [EMPLOYEENUMBER]}}
+
+  - name: products_contract
+    table: products
+    version: 1
+    policies:
+      - name: products_functional
+        intent: FUNCTIONAL
+        row_count: 110
+        column_groups:
+          - {name: key, columns: [PRODUCTCODE], generator: sequence, params: {prefix: "S", start: 1}}
+          - {name: names, columns: [PRODUCTNAME, PRODUCTVENDOR, PRODUCTDESCRIPTION], generator: string}
+          - {name: line, columns: [PRODUCTLINE], generator: categorical, params: {source: profile}}
+          - {name: scale, columns: [PRODUCTSCALE], generator: categorical, params: {source: profile}}
+          - {name: stock, columns: [QUANTITYINSTOCK], generator: integer, params: {min: 0, max: 9999}}
+          - {name: prices, columns: [BUYPRICE, MSRP], generator: integer, params: {min: 1, max: 250}}
+        expectations:
+          - {id: products_pk_unique, type: uniqueness, scope: COLUMN, target: {table: products, columns: [PRODUCTCODE]}}
+          - {id: products_line_enum, type: enumeration, scope: COLUMN, target: {table: products, columns: [PRODUCTLINE]}, params: {source: profile}}
+
+  - name: orders_contract
+    table: orders
+    version: 1
+    policies:
+      - name: orders_functional
+        intent: FUNCTIONAL
+        row_count: 330
+        column_groups:
+          - {name: key, columns: [ORDERNUMBER], generator: sequence, params: {start: 10000}}
+          - {name: dates, columns: [ORDERDATE, REQUIREDDATE, SHIPPEDDATE], generator: timestamp, params: {start: "2003-01-01", end: "2005-12-31"}}
+          - {name: status, columns: [STATUS], generator: categorical, params: {source: profile}}
+          - {name: comments, columns: [COMMENTS], generator: string, params: {null_ratio: 0.7}}
+          - {name: customer, columns: [CUSTOMERNUMBER], generator: foreign_key, params: {parent: customers, parent_columns: [CUSTOMERNUMBER]}}
+        expectations:
+          - {id: orders_pk_unique, type: uniqueness, scope: COLUMN, target: {table: orders, columns: [ORDERNUMBER]}}
+          - {id: orders_status_enum, type: enumeration, scope: COLUMN, target: {table: orders, columns: [STATUS]}, params: {source: profile}}
+          - {id: orders_customer_fk, type: referential_integrity, scope: RELATIONSHIP, target: {table: orders, columns: [CUSTOMERNUMBER]}, params: {parent: customers, parent_columns: [CUSTOMERNUMBER]}}
+
+  - name: orderdetails_contract
+    table: orderdetails
+    version: 1
+    policies:
+      - name: orderdetails_functional
+        intent: FUNCTIONAL
+        row_count: 3001
+        column_groups:
+          - name: line_keys
+            columns: [ORDERNUMBER, PRODUCTCODE]
+            generator: foreign_key
+            params:
+              parents: {ORDERNUMBER: {parent: orders, parent_columns: [ORDERNUMBER]}, PRODUCTCODE: {parent: products, parent_columns: [PRODUCTCODE]}}
+              unique_together: true
+          - {name: quantity, columns: [QUANTITYORDERED], generator: integer, params: {min: 1, max: 100}}
+          - {name: price, columns: [PRICEEACH], generator: integer, params: {min: 1, max: 250}}
+          - {name: line, columns: [ORDERLINENUMBER], generator: integer, params: {min: 1, max: 18}}
+        expectations:
+          - {id: details_pk_unique, type: uniqueness, scope: COLUMN, target: {table: orderdetails, columns: [ORDERNUMBER, PRODUCTCODE]}}
+          - {id: details_order_fk, type: referential_integrity, scope: RELATIONSHIP, target: {table: orderdetails, columns: [ORDERNUMBER]}, params: {parent: orders, parent_columns: [ORDERNUMBER]}}
+          - {id: details_product_fk, type: referential_integrity, scope: RELATIONSHIP, target: {table: orderdetails, columns: [PRODUCTCODE]}, params: {parent: products, parent_columns: [PRODUCTCODE]}}

@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "test-data-factory"
+version = "0.1.0"
+description = "Contract-driven synthetic test data generation for relational databases."
+requires-python = ">=3.12"
+dependencies = [
+    "click>=8.1",
+    "duckdb>=1.5",
+    "neo4j>=6.0",
+    "pandas>=3.0",
+    "pydantic>=2.0",
+    "PyYAML>=6.0",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=9.0"]
+
+[project.scripts]
+tdf = "tdf.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--strict-markers"
+markers = [
+    "req(*ids): requirement or acceptance-criteria IDs from docs/PRD.md covered by the test",
+    "neo4j: needs a reachable Neo4j server (skipped otherwise)",
+    "duckdb: needs data/steelwheels.duckdb (skipped otherwise)",
+]

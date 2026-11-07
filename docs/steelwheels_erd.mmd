@@ -1,0 +1,70 @@
+erDiagram
+    customers ||--|{ orders : "CUSTOMERNUMBER=CUSTOMERNUMBER"
+    orders ||--|{ orderdetails : "ORDERNUMBER=ORDERNUMBER"
+    products ||--o{ orderdetails : "PRODUCTCODE=PRODUCTCODE"
+    employees |o--|{ customers : "EMPLOYEENUMBER=SALESREPEMPLOYEENUMBER"
+    offices ||--o{ employees : "OFFICECODE=OFFICECODE"
+    employees |o--o{ employees : "EMPLOYEENUMBER=REPORTSTO"
+    customers {
+        bigint CUSTOMERNUMBER PK
+        string CUSTOMERNAME
+        string CONTACTLASTNAME
+        string CONTACTFIRSTNAME
+        string PHONE
+        string ADDRESSLINE1
+        string ADDRESSLINE2
+        string CITY
+        string STATE
+        string POSTALCODE
+        string COUNTRY
+        int SALESREPEMPLOYEENUMBER FK
+        decimal CREDITLIMIT
+    }
+    orders {
+        bigint ORDERNUMBER PK
+        date ORDERDATE
+        date REQUIREDDATE
+        date SHIPPEDDATE
+        string STATUS
+        string COMMENTS
+        bigint CUSTOMERNUMBER FK
+    }
+    products {
+        string PRODUCTCODE PK
+        string PRODUCTNAME
+        string PRODUCTLINE
+        string PRODUCTSCALE
+        string PRODUCTVENDOR
+        string PRODUCTDESCRIPTION
+        int QUANTITYINSTOCK
+        decimal BUYPRICE
+        decimal MSRP
+    }
+    orderdetails {
+        bigint ORDERNUMBER PK, FK
+        string PRODUCTCODE PK, FK
+        int QUANTITYORDERED
+        decimal PRICEEACH
+        int ORDERLINENUMBER
+    }
+    employees {
+        int EMPLOYEENUMBER PK
+        string LASTNAME
+        string FIRSTNAME
+        string EXTENSION
+        string EMAIL
+        string OFFICECODE FK
+        int REPORTSTO FK
+        string JOBTITLE
+    }
+    offices {
+        int OFFICECODE PK
+        string CITY
+        string PHONE
+        string ADDRESSLINE1
+        string ADDRESSLINE2
+        string STATE
+        string COUNTRY
+        string POSTALCODE
+        string TERRITORY
+    }

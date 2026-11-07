@@ -271,6 +271,17 @@ Only the following properties are defined so far.
 |----------|--------|-------------|
 | `outcome` | `SATISFIED`, `UNEXPECTED_VIOLATION`, `EXPECTED_VIOLATION`, `UNEVALUATED` | Result of evaluating the expectation. |
 
+### Provisional (Phase 1)
+
+| Element | Property | Description |
+|---------|----------|-------------|
+| `RELATES_TO` | `parent_columns`, `child_columns` | Ordered column names that join the tables (supports composite keys). |
+| `RELATES_TO` | `cardinality`, `optional` | Cardinality of the relationship and whether the child reference may be null. |
+
+A single `ProfileObservation` may link `ABOUT` several columns, for example a value set of `(CITY, STATE, COUNTRY)` combinations.
+
+These are provisional pending the open architectural decisions in [`PRD.md`](PRD.md).
+
 ## Conventions
 
 - Node labels are PascalCase; relationship types are UPPER_SNAKE_CASE.

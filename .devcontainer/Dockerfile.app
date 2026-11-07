@@ -15,9 +15,12 @@ FROM runtime AS development
 
 ARG OPENCODE_VERSION=1.19.3
 ARG CODE_REVIEW_GRAPH_VERSION=2.3.9
+# DUCKDB_VERSION must match the duckdb pin in requirements.txt.
 ARG DUCKDB_VERSION=1.5.6
 
 USER root
+
+COPY requirements.txt /tmp/requirements.txt
 
 RUN apt-get update \
     && DEBIAN_FRONTEND=noninteractive apt-get install --yes --no-install-recommends \
@@ -27,14 +30,14 @@ RUN apt-get update \
     && printf '%s\n' 'Australia/Sydney' > /etc/timezone \
     && pip install --no-cache-dir \
         "code-review-graph==${CODE_REVIEW_GRAPH_VERSION}" \
-        "duckdb==${DUCKDB_VERSION}" \
+        --requirement /tmp/requirements.txt \
     && curl --fail --silent --show-error --location \
         "https://github.com/duckdb/duckdb/releases/download/v${DUCKDB_VERSION}/duckdb_cli-linux-amd64.zip" \
         --output /tmp/duckdb-cli.zip \
     && python -m zipfile --extract /tmp/duckdb-cli.zip /tmp/duckdb-cli \
     && install --mode=0755 /tmp/duckdb-cli/duckdb /usr/local/bin/duckdb \
     && duckdb --version >/dev/null \
-    && rm -rf /tmp/duckdb-cli /tmp/duckdb-cli.zip \
+    && rm -rf /tmp/duckdb-cli /tmp/duckdb-cli.zip /tmp/requirements.txt \
     && rm -rf /var/lib/apt/lists/* \
     && mkdir -p /home/developer/.config/opencode /home/developer/.local/share/opencode \
     && chown -R developer:developer /home/developer/.config /home/developer/.local
