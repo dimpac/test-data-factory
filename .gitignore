@@ -225,3 +225,6 @@ __marimo__/
 # Generated databases
 /data/steelwheels.duckdb*
 /data/.steelwheels.duckdb.tmp*
+
+# Generated test data (README demo output)
+/out/

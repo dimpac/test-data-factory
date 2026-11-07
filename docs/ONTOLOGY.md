@@ -277,6 +277,8 @@ Only the following properties are defined so far.
 |---------|----------|-------------|
 | `RELATES_TO` | `parent_columns`, `child_columns` | Ordered column names that join the tables (supports composite keys). |
 | `RELATES_TO` | `cardinality`, `optional` | Cardinality of the relationship and whether the child reference may be null. |
+| `GenerationPolicy` | `intent` | Testing intent: `FUNCTIONAL`, `PERFORMANCE` or `EDGE` (AD-001). |
+| `GenerationPolicy` | `row_count` | Default number of rows generated for the table under this policy. Non-negative; `tdf generate --rows TABLE=COUNT` overrides it per run. |
 
 A single `ProfileObservation` may link `ABOUT` several columns, for example a value set of `(CITY, STATE, COUNTRY)` combinations.
 

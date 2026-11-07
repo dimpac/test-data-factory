@@ -104,6 +104,10 @@ def graph():
     from tdf.graph import GraphClient
 
     client = GraphClient.from_env(database=TEST_DATABASE)
+    # Neo4j data is ephemeral (tmpfs), so the test database must be created on a fresh server.
+    client.driver.execute_query(
+        f"CREATE DATABASE `{TEST_DATABASE}` IF NOT EXISTS WAIT", database_="system"
+    )
     client.run("MATCH (n) DETACH DELETE n")
     yield client
     client.run("MATCH (n) DETACH DELETE n")

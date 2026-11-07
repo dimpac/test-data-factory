@@ -19,6 +19,9 @@ services:
     volumes:
       - ..:/workspaces/test-data-factory:cached
     working_dir: /workspaces/test-data-factory
+    depends_on:
+      test-data-factory-graph:
+        condition: service_healthy
 
   test-data-factory-graph:
     build:
@@ -39,5 +42,12 @@ services:
         export NEO4J_initial_dbms_default__database="$${NEO4J_DATABASE}"
         unset NEO4J_USERNAME NEO4J_PASSWORD NEO4J_DATABASE NEO4J_URL
         exec /startup/docker-entrypoint.sh neo4j
+    healthcheck:
+      # Bolt port open means the server accepts connections; uses only the image's shell.
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/7687' || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 20s
     tmpfs:
       - /data

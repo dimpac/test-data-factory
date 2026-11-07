@@ -52,6 +52,6 @@ USER developer
 RUN curl --fail --silent --show-error --location https://opencode.ai/install \
     | bash -s -- --version "${OPENCODE_VERSION}" --no-modify-path
 
-ENV PATH="/home/developer/.opencode/bin:${PATH}"
+ENV PATH="/home/developer/.opencode/bin:/home/developer/.local/bin:${PATH}"
 
 FROM runtime AS production
